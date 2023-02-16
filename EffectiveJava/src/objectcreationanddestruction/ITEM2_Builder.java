@@ -1,7 +1,7 @@
 package objectcreationanddestruction;
 
 public class ITEM2_Builder {
-    
+
     static class NutritionFacts {
 
         private final int servingSize;
