@@ -222,3 +222,80 @@ public enum ITEM3_SingleTon {
 - 이를 해결하기 위해 private 생성자를 추가하면 클래스의 인스턴스화를 막을 수 있다.
     - 이 방식은 상속을 불가능하게 하는 효과도 있다.
     - 모든 생성자는 명시적이든 묵시적이든 상위 클래스의 생성자를 호출하게 되는데, 이를 private으로 선언했으니 하위 클래스가 상위 클래스의 생성자에 접근할 길이 막혀버린다.
+    
+    
+# 아이템 5: 자원을 직접 명시하지 말고 의존 객체 주입을 사용하라
+
+## 의존 객체  23/02/27
+
+📎 정적 유틸리티를 잘못 사용한 예 - 유연하지 않고 테스트하기 어렵다.
+
+```java
+public class SpellChecker {
+
+	private static final Lexicon dictionary = ...;
+
+	private SpellChecker() {}
+
+	public static boolean isValid(String word) {...}
+	public static List<String> suggestions(String typo) {...}
+	
+}
+```
+
+📎 싱글턴을 잘못 사용한 예 - 유연하지 않고 테스트하기 어렵다
+
+```java
+public class SpellChecker {
+	private static final Lexicon dictionary = ...;
+
+	private SpellChecker() {}
+	private static SpellChecker INSTANCE = new SpellChecker(..);
+
+	public static boolean isValid(String word) {...}
+	public static List<String> suggestions(String typo) {...}
+}
+```
+
+- 두 방식 모두 사전을 단 하나만 사용한다고 가정한다는 점에서 그리 훌룡해 보이지 않다.
+- 실전에서는 사전이 언어별로 따로 있고 특수 어휘용 사전을 별도로 두기도 한다.
+- 심지어 테스트용 사전도 필요할 수 있다.
+- 사전 하나로 이 모든 쓰임에 대응할 수 있기를 바라는 건 너무 순진한 생각이다.
+
+📎 인스턴스를 생성할 때 생성자에 필요한 자원을 넘겨주는 방식
+
+```java
+public class SpellChecker {
+	private static final Lexicon dictionary;
+
+	public SpellChecker(Lexicon dictionary) {
+		this.dictionary = Object.requireNotNull(dictionary);
+	}
+
+	public static boolean isValid(String word) {...}
+	public static List<String> suggestions(String typo) {...}
+}
+```
+
+- 자원이 몇개든 상관 없이 동작한다.
+- 이 방식은 불변을 보장하여 여러 클라이언트가 의존 객체들을 안심하고 공유할 수 있다.
+- 정적 팩터리, 빌더 모두에 똑같이 응용할 수 있다.
+
+📎 생성자에 자원 팩터리를 넘겨주는 방식
+
+- 팩터리란 호출할 때마다 특정 타입의 인스턴스를 반복해서 만들어주는 객체를 말한다.
+- 즉 팩터리 메서드 패턴(Factory Method pattern)을 구현한 것이다.
+- Java 8에서는 Supplier<T> 인터페이스가 팩터리를 표현한 완벽한 예이다.
+- Supplier<T>를 입력으로 받는 메서드는 일반적으로 한정적 와일드 카드 타입을 사용해 팩터리의 타입 매개변수를 제한해야 한다.
+- 이 방식을 사용해 클라이언트는 자신이 명시한 타입의 하위 타입이라면 무엇이든 생성할 수 있는 팩터리를 넘길 수 있다.
+
+```java
+Mosaic create(Supplier<? extends Til> tileFactory) { ... }
+```
+
+- 의존 객체 주입이 유연성과 테스트 용이성을 개선해주긴 하지만, 의존성이 수천 개나 되는 큰 프로젝트에서는 코드를 어지럽게 만들기도 한다.
+- Spring 같은 의존 객체 주입 프레임웤르르 사용하면 이런 어질러짐을 해결할 수 있다.
+
+> 핵심 정리
+클래스가 내부적으로 하나 이상의 자원에 의존하고, 그 자원이 클래스 동작에 영향을 준다면 싱글턴과 정적 유틸리티 클래스는 사용하지 않는 것이 좋다. 이 자원들을 클래스가 직접 만들게 해서도 안 된다. 대신 필요한 자원을 (혹은 그 자원을 만들어주는 팩터리를) 생성자에 (혹은 정적 팩터리나 빌더에) 넘겨주자. 의존 객체 주입이라 하는 이 기법은 클래스의 유연성, 재사용성, 테스트 용이성을 개선해준다.
+>
