@@ -1,3 +1,87 @@
+# 아이템 1: 생성자 대신 정적 팩토리 메소드를 고려하라
+
+## 정적 팩토리 메소드 23/02/28
+
+📎 해당 클래스의 인스턴스를 반환하는 정적 메서드
+
+- boolean 기본 타입의 박싱 클래스(boxed class)인 Boolean에서 발췌한 간단한 예
+- 이 메서드는 기본 탕비인 boolean 값을 받아 Boolean 객체 참조로 변환해준다.
+
+```java
+public static Boolean valueOf(boolean b) {
+	return b ? Boolean.TRUE : Boolean.FALSE:
+}
+```
+
+> 지금 얘기하는 정적 팩터리 메서드는 디자인 패턴[Gamma95]에서의 팩터리 메서드 (Factory Method)와 다르다. 디자인 패턴 중에는 이와 일치하는 패턴은 없다.
+> 
+
+📎 정적 팩터리 메소드와 생성자 비교
+
+- 장점
+    - 이름을 가질 수 있다.
+        - 생성자에 넘기는 매개변수와 생성자 자체만으로는 반환될 객체의 특성을 제대로 설명하지 못한다.
+        - 반면 정적 팩터리 메서드는 이름만 잘 지으면 반환될 객체의 특성을 쉽게 묘사할 수 있다.
+        
+    - 호출될 때마다 인스턴스를 새로 생성하지 않아도 된다.
+        - 이 덕분에 불변 클래스(immutable class)는 인스턴스를 미리 만들어 놓거나 새로 생성한 이늣턴스를 캐싱하여 재활용 하는 식으로 불필요한 객체 생성을 피할 수 있다.
+        - 대표적 예인 `Boolean.valueOf(boolean)`메서드는 객체를 아예 생성하지 않는다.
+        - 따라서 (특히 생성 비용이 큰) 같은 객체가 자주 요청되는 상황이라면 성능을 상당히 끌어오려 준다.
+        - 플라이웨이트 패턴(Flyweight pattern)도 이와 비슷한 기법이다.
+        
+    - 반환 타입의 하위 타입 객체를 반환할 수 있는 능력이 있다.
+        - 반환할 객체의 클래스를 자유롭게 선택할 수 있게 하는 **엄청난 유연성**을 선물한다
+        - API를 만들 때 이 유연성을 으용하면 구현 클래스를 공개하지 않고도 그 객체를 반환할 수 있어 API를 작게 유지할 수 있다.
+        
+    - 입력 매개 변수에 따라 매번 다른 클래스의 객체를 반환할 수 있다.
+        - 반환 타입이 하위 타입이기만 하면 어떤 클래스의 객체를 반환하든 상관 없다.
+        - 가령 EnumSet 클래스는 public s생성자 없이 오직 정적 팩터리만 제공하는데, OpenJDK에서는 원소의 수에 따라 두 가지 하위 클래스 중 하나의 인스턴스를 반환한다.
+            - 원소가 64개 이하면 원소들을 long 변수 하나로 관리하는 RegularEnumSet의 인스턴스를, 65개 이상이면 long배열로 관리하는 JumboEnumSet의 인스턴스를 반환한다.
+            - 클라이언트는 이 두 클래스의 존재를 모른다.
+            - RegularEnumSet이 필요 없으면 해당 릴리스를 지우면 되고 추가로 릴리스를 추가할 수도 있다. EnumSet의 하위 클래스이기만 하면 되는 것이다.
+            
+    - 정적 팩터리 메서드를 작성하는 시점에는 반환할 객체의 클래스가 존재하지 않아도 된다.
+        - 이런 유연함은 서비스 제공자 프레임워크(service provider framework)를 만드는 근간이 된다.
+        - 대표적인 서비스 제공자 프레임 워크로는 JDBC가 있다.
+        - 서비스 제공자 프레임워크에서의 제공자(provider)는 서비스의 구현체이다.
+        - 그리고 이 구현체들을 클라이언트에 제공하는 역할을 프레임워크가 통제하여, 클라이언트를 구현체로부터 분리해준다.
+            - 서비스 제공자 프레임워크는 3개의 핵심 컴포넌트로 이루어진다.
+            - 구현체의 동작을 정의하는 서비스 인터페이스(service Interface)
+            - 제공자가 구현체를 등록할 때 사용하는 제공자 등록 API (provider registration API)
+            - 클라이언트가 서비스의 인스턴스를 얻을 때 사용하는 API(service access API)가 그것이다.
+        - 클라이언트는 서비스 접근 API를 사용할 때 원하는 구현체의 조건을 명시할 수 있다.
+        - 조건을 명시하지 않으면 기본 구현체를 반환하거나 지원하는 구현체들을 하나씩 돌아가며 반환한다.
+        - 이 서비스 접근 API가 바로 서비스 제공자 프레임워크의 근간이라고 한 ‘유연한 정적 팩터리’의 실체다.
+    
+- 단점
+    - 상속을 하려면 public이나 protected 생성자가 필요하니 정적 팩터리 메서드만 제공하면 하위 클래스를 만들 수 없다.
+    
+    - 정적 팩터리 메서드는 프로그래머가 찾기 어렵다.
+    
+
+📎 정적 팩토리 메소드 명명 관례
+
+- **from**: 매개변수를 하나 받아서 해당 타입의 인스턴스를 반환하는 형변환 메서드
+    - `Date d = Date.from(instant);`
+- **of**: 여러 매개변수를 받아 적합한 타입의 인스턴스를 반환하는 집계 메서드
+    - `Set<Rank> faceCard = EnumSet.of(JACK, QUEEN, KING);`
+- **valueOf**: from과 of의 더 자세한 버전
+    - `BigInteger prime = BigInteger.valueOf(Integer.MAX_VALUE);`
+- **instance 혹은 getInstance**: (매개변수를 받는다면) 매개변수로 명시한 인스턴스를 반환하지만 같은 인스턴스임을 보장하지는 않는다.
+    - `StackWalker luke = StackWalker.getInstance(options);`
+- **create 혹은 newInstance**: instance 혹은 getInstance와 같지만, 매번 새로운 인스턴스를 생성해 반환함을 보장한다.
+    - `Object newArray = Array.newInstance(classObject, arryLen);`
+- **getType**: getInstance와 같으나, 생성할 클래스가 아닌 다른 클래스에 팩터리 메서드를 정의할 때 쓴다. “Type”은 팩터리 메서드가 반환할 개체의 타입이다.
+    - `FileStore fs = Files.getFilesTore(path)`
+- **newType**: newInstance와 같으나, 생성할 클래스가 아닌 다른 클래스에 팩터리 메서드를 정의할 때 쓴다. “Type”은 팩터리 메서드가 반환할 객ㄱ체의 타입이다.
+    - `BufferedReader br = Files.newBUfferedReader(path);`
+- **type**: getType과 newType의 간결한 버전
+    - `List<Complaint> litany = Collection.list(legacyLitary);`
+
+> **핵심 정리**
+정적 팩터리 메서드와 public 생성자는 각자의 쓰임새가 있으니 상대적인 ㅏㅈㅇ단점을 이해하고 사용하는 것이 좋다. 그렇다고 하더라도 정적 팩터리를 사용하는 게 유리한 경우가 더 많으므로 무작정 public 생성자를 제공하던 습관이 있다면 고치자.
+>
+
 # 아이템 2: 생성자에 매개변수가 많다면 빌더를 고려하라
 
 ## 빌더 패턴 23/02/16
