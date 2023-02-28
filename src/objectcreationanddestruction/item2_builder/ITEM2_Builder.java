@@ -1,15 +1,22 @@
-package objectcreationanddestruction;
+package objectcreationanddestruction.item2_builder;
 
 public class ITEM2_Builder {
 
-    static class NutritionFacts {
+    public static void main(String[] args) {
+        NutritionFacts nutritionFacts = new NutritionFacts.Builder(100, 20).build();
 
-        private final int servingSize;
-        private final int servings;
-        private final int calories;
-        private final int fat;
-        private final int sodium;
-        private final int carbohydrate;
+
+
+    }//main
+
+    public static class NutritionFacts {
+
+        private int servingSize;
+        private int servings;
+        private int calories;
+        private int fat;
+        private int sodium;
+        private int carbohydrate;
 
         public int getCalories() {
             return calories;
@@ -60,6 +67,6 @@ public class ITEM2_Builder {
             }
 
         }
-    }
+    }//NutrationFacts
 
-}
+}//Builder class
