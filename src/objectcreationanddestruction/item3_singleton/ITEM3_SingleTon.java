@@ -21,11 +21,3 @@ public class ITEM3_SingleTon {
         return INSTANCE2;
     }
 }
-
-enum ITEM3_SingleTon2 {
-    INSTANCE;
-
-    public void leaveTheBuilding() {
-
-    }
-}
