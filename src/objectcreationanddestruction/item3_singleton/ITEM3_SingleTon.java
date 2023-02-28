@@ -1,4 +1,4 @@
-package objectcreationanddestruction;
+package objectcreationanddestruction.item3_singleton;
 
 public class ITEM3_SingleTon {
 

@@ -1,15 +1,15 @@
-package objectcreationanddestruction;
+package objectcreationanddestruction.item5_document_object_injection;
 
 import java.util.List;
 
 /**
  * Dependency Object Injection
  */
-public class ITEM5_DOI {
+public class ITEM5_Document_Object_Injection {
 
     private final Lexicon dictionary;
 
-    public ITEM5_DOI(Lexicon dictionary) {
+    public ITEM5_Document_Object_Injection(Lexicon dictionary) {
         this.dictionary = dictionary;
     }
 

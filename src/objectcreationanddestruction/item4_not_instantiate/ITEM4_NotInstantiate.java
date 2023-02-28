@@ -1,4 +1,4 @@
-package objectcreationanddestruction;
+package objectcreationanddestruction.item4_not_instantiate;
 
 public class ITEM4_NotInstantiate {
 
