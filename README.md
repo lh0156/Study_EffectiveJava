@@ -586,7 +586,7 @@ public class ITEM7_DeReferencingAnObject {
     - 캐시 외부에서 키(key)를 참조하는 동안만(값이 아니다) 엔트리가 살아 있는 캐시가 필요한 상황이라면 WeakHashMap을 사용해 캐시를 만들자.
     - 엔트리를 ScheduledThreadPoolExecutor 같은 백그라운드 스레드를 활용해서 캐시에 새 엔트리를 추가할 때 부수 작업으로 청소해준다.
         - LinkedHashMap은 remove EldestEntry 메서드를 써서 후자의 방식으로 처리한다.
-- 메모리 누수의 세 번째 주접믕ㄴ 바로 리스너(listener)혹은 콜백(callback)이라 부르는 것이다.
+- 메모리 누수의 세 번째 주범은 바로 리스너(listener)혹은 콜백(callback)이라 부르는 것이다.
     - 클라이언트가 콜백을 등록만 하고 명확히 해지하지 않는다면 뭔가 조치해주지 않는 한 콜백은 계속 쌓이게 될 것이다.
     - 이럴 때 콜백을 약한 참조(weak reference)로 저장함녀 가비지 컬렉터가 즉시 수거해간다.
     - 예를들어 WeakHashMap에 키로 저장하면 된다
