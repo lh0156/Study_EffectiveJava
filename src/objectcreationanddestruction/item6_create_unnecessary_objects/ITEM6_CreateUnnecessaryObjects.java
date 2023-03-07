@@ -22,4 +22,15 @@ public class ITEM6_CreateUnnecessaryObjects {
 
     }
 
+    //끔찍이 느리다!
+    private static long sum() {
+        Long sum = 0L;
+
+        for (long i = 0; i <= Integer.MAX_VALUE; ++i) {
+            sum += i;
+        }
+
+        return sum;
+    }
+
 }
