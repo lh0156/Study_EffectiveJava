@@ -1,4 +1,4 @@
-package objectcreationanddestruction.item4_not_instantiate;
+package object_creation_and_destruction.item4_not_instantiate;
 
 public abstract class ITEM4_AbstractInstantiate {
 

@@ -1,4 +1,4 @@
-package objectcreationanddestruction.item6_create_unnecessary_objects;
+package object_creation_and_destruction.item6_create_unnecessary_objects;
 
 public class ITEM6_CreateUnnecessaryObjects {
 

@@ -1,4 +1,4 @@
-package objectcreationanddestruction.item5_document_object_injection;
+package object_creation_and_destruction.item5_document_object_injection;
 
 import java.util.List;
 

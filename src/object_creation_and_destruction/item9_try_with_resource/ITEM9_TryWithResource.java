@@ -1,4 +1,4 @@
-package objectcreationanddestruction.item9_try_with_resource;
+package object_creation_and_destruction.item9_try_with_resource;
 
 import java.io.*;
 
@@ -45,13 +45,10 @@ public class ITEM9_TryWithResource {
     }
 
     static String firstLineOfFileWithCatch(String path, String defaultVal) {
-
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             return br.readLine();
         } catch (IOException e) {
             return defaultVal;
         }
-
-
     }
 }

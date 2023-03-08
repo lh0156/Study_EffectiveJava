@@ -1,4 +1,4 @@
-package objectcreationanddestruction.item7_dereferencing_an_object;
+package object_creation_and_destruction.item7_dereferencing_an_object;
 
 import java.util.Arrays;
 import java.util.EmptyStackException;

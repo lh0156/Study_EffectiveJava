@@ -1,4 +1,4 @@
-package objectcreationanddestruction.item2_builder;
+package object_creation_and_destruction.item2_builder;
 
 public class Member {
 
