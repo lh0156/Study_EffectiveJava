@@ -642,3 +642,82 @@ public class ITEM7_DeReferencingAnObject {
 > **핵심 정리**
 cleaner(자바 8까지는 finalizer)는 안전망 역할이나 중요하지 않은 네이티브 자원 회수 용으로만 사용하자. 물론 이런 경우라도 불확실성과 성능 저하에 주의해야 한다.
 >
+
+# 아이템 9: try-finally보다는 try-with-resource를 사용하라
+
+## try-with-reousrce 23/03/07
+
+📎 자원 닫기는 클라이언트가 놓치기 쉽다.
+
+- 이런 자원 중 상당수가 안전망으로 finalizer를 활용하고는 있지만 finalizer는 그리 믿을만하지 못하다
+- try-finally - 더 이상 자원을 회수하는 최선의 방책이 아니다
+
+```java
+//try-finally - 더 이상 자원을 회수하는 최선의 방책이 아니다
+static String firstLineOfFile(String path) throws IOException {
+    BufferedReader br = new BufferedReader(new FileReader(path));
+    try {
+        return br.readLine();
+    } finally {
+        br.close();
+    }
+}
+```
+
+- 나쁘지 않지만 자원이 추가된다면 아주 지저분해진다
+
+```java
+//자원이 둘 이상이면 try-finally 방식은 너무 지저분하다!
+static void copy (String src, String dst) throws IOException {
+    InputStream in = new FileInputStream(src);
+    int BUFFERED_SIZE = 1024;
+
+    try {
+        OutputStream out = new FileOutputStream(dst);
+        try {
+            byte[] buf = new byte[BUFFERED_SIZE];
+            int n;
+            while ((n = in.read(buf)) >= 0)
+                out.write(buf, 0, n);
+        } finally {
+            out.close();
+        }
+    } finally {
+        in.close();
+    }
+}
+```
+
+- 또 try-finally 문을 제대로 사용한 경우에도 미묘한 결점이 있다
+
+```java
+static String firstLineOfFileException(String path) throws IOException {
+    try {
+        //readLine();
+        throw new IllegalArgumentException();
+    } finally {
+        //close();
+        throw new NullPointerException();
+    }
+}
+```
+
+<aside>
+💡
+
+</aside>
+
+- firstLineOfFile() 메소드를 다시 한 번 살펴보면, 시스템 문제로 인해 예외가 try와 finally 모두 발생할 수가 있다. 이 때, try-finally는 두번째 예외(finally - close())가 첫번째 예외(try - readLine())를 덮어버리게 된다.
+- **실제로 스택 내역에 close()의 예외는 등장하지 않고, 두번째 예외만 등장하게 된다.**
+
+- try-with-resource를 catch 절과 함께 쓰는 모습
+
+```java
+static String firstLineOfFileWithCatch(String path, String defaultVal) {
+    try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+        return br.readLine();
+    } catch (IOException e) {
+        return defaultVal;
+    }
+}
+```
