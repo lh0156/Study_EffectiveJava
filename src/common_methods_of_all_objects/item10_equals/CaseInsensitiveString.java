@@ -1,5 +1,8 @@
 package common_methods_of_all_objects.item10_equals;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CaseInsensitiveString {
 
 //    private final String s;
@@ -18,4 +21,13 @@ public class CaseInsensitiveString {
 //        return false;
 //
 //    }
+
+//    List<CaseInsensitiveString> list = new ArrayList<>();
+//    list.add(cis);
+
+//    @Override
+//    public boolean equals(Object o) {
+//        return o instanceof CaseInsensitiveString && ((CaseInsensitiveString) o).s.equalsIgnoreCase(s);
+//    }
+
 }

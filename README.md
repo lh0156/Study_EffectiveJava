@@ -92,7 +92,7 @@ public static Boolean valueOf(boolean b) {
 - 추상 클래스는 추상 빌더를, 구체 클래스는 구체 빌더를 갖게 한다.
 
 ```java
-package objectcreationanddestruction;
+package object_creation_and_destruction;
 
 public class ITEM2_Builder {
 
@@ -123,9 +123,9 @@ public class ITEM2_Builder {
             private final int servingSize;
             private final int servings;
 
-            private int calories     = 0;
-            private int fat          = 0;
-            private int sodium       = 0;
+            private int calories = 0;
+            private int fat = 0;
+            private int sodium = 0;
             private int carbohydrate = 0;
 
             public Builder(int servingSize, int servings) {
@@ -134,19 +134,23 @@ public class ITEM2_Builder {
             }
 
             public Builder calories(int val) {
-                calories = val; return this;
+                calories = val;
+                return this;
             }
 
             public Builder fat(int val) {
-                fat = val; return this;
+                fat = val;
+                return this;
             }
 
             public Builder sodium(int val) {
-                sodium = val; return this;
+                sodium = val;
+                return this;
             }
 
             public Builder carbohydrate(int val) {
-                carbohydrate = val; return this;
+                carbohydrate = val;
+                return this;
             }
 
             public NutritionFacts build() {
@@ -183,7 +187,7 @@ public class ITEM2_Builder {
 📎 첫 번째 방식: public static 멤버가 final 필드인 방식
 
 ```java
-package objectcreationanddestruction;
+package object_creation_and_destruction;
 
 public class ITEM3_SingleTon {
 
@@ -209,7 +213,7 @@ public class ITEM3_SingleTon {
 📎 두 번째 방식: 정적 팩터리 메서드를 public static 멤버로 제공하는 방식
 
 ```java
-package objectcreationanddestruction;
+package object_creation_and_destruction;
 
 public class ITEM3_SingleTon {
 
@@ -249,7 +253,7 @@ Supplier<ITEM3_SingleTon>
 - 가짜 인스턴스의 탄생을 예방하고 싶다면 다음의 readResolve 메서드를 추가하면 된다.
 
 ```java
-package objectcreationanddestruction;
+package object_creation_and_destruction;
 
 public class ITEM3_SingleTon {
 
@@ -259,7 +263,7 @@ public class ITEM3_SingleTon {
         return INSTANCE2;
     }
 
-		// 가짜 ITEM3_SingleTon 생성을 예방해주는 코드
+    // 가짜 ITEM3_SingleTon 생성을 예방해주는 코드
     private Object readResolve() {
         // '진짜' ITEM3_SingleTon을 반환하고, 가짜 ITEM_SingleTon은 가비지 컬렉터에 맡긴다.
         return INSTANCE2;
@@ -524,7 +528,7 @@ private static long sum() {
 - 잘못된 Stack 구현 예제
 
 ```java
-package objectcreationanddestruction.item7_dereferencing_an_object;
+package object_creation_and_destruction.item7_dereferencing_an_object;
 
 import java.util.Arrays;
 import java.util.EmptyStackException;
@@ -541,7 +545,7 @@ public class ITEM7_DeReferencingAnObject {
             elements = new Object[DEFAULT_INITIAL_CAPACITY];
         }
 
-        public void push(Object e ) {
+        public void push(Object e) {
             ensureCapacity();
             elements[size++] = e;
         }
