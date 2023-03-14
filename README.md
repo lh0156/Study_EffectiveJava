@@ -732,9 +732,7 @@ static String firstLineOfFileWithCatch(String path, String defaultVal) {
 
 # 아이템 10: equals는 일반 규약을 지켜 재정의하라
 
-## 일반 규약
-
-                                                                                                                                                 23/03/08
+## 일반 규약 23/03/08
 
 📎 아래에 해당되는 상황이라면 재정의하지 않는것이 최선
 
