@@ -1262,6 +1262,7 @@ static String firstLineOfFileWithCatch(String path, String defaultVal) {
     꼭 필요한 경우가 아니면 equals를 재정의하지 말자. 많은 경우에 Object의 equals가 여러분이 원하는 비교를 정확히 수행해준다. 재정의해야 할 때는 그 클래스의 핵심 필드 모두를 빠짐 없이, 다섯 가지 규약을 확실히 지켜가며 비교해야 한다.
     >
 
+
 # 아이템 11: equals를 재정의 하려거든 hashCode도 재정의하라.
 
 ## hashCode 23/03/16
