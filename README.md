@@ -1126,3 +1126,138 @@ static String firstLineOfFileWithCatch(String path, String defaultVal) {
     	}
     }
     ```
+    
+    - 이러한 검사는 필요치 않다. 동치성을 검사하려면 equals는 건네받은 객체를 적절히 형변환한 후 필수 필드들의 값을 알아내야 한다. 그러려면 형변환에 앞서 instanceof 연산자로 입력 매개변수가 올바른  타입인지 검사해야 한다.
+    
+    ```java
+    // 묵시적 null 검사 - 이쪽이 낫다
+    @Override public boolean equals(Object o) {
+    	if (!(o instanceof MyType))
+    		return false;
+    	MyType mt = (MyType) 0;
+    	// ...
+    }
+    ```
+    
+    - equals가 타입을 확인하지 않으면 잘못된 타입이 인수로 주어졌을 때 `ClassCastException`을 던져서 일반 규약을 위배하게 된다.
+    - 그런데 `instanceof`는 (두 번쨰 피연산자와 무관하게) 첫 번째 피연산자가 null이면 `fasle`를 반환한다(JLS, 15.20.2) 따라서 입력이 `null`이면 타입 확인 단계에서 `false`를 반환하기 때문에 null 검사를 명시적으로 하지 않아도 된다.
+- **지금까지 내용 종합, 양질의 equals 메서드 구현 방법**
+    1. == 연산자를 이용해 입력이 자기 자신의 참조인지 확인한다. 자기 자신이면 true를 반환한다. 이는 단순한 성능 최적화용으로, 비교 작업이 복잡한 상황일 때 값어치를 할 것이다.
+    2. `instanceof` 연산자로 입력이 올바른 타입인지 확인한다. 그렇지 않다면 false를 반환한다. 이때의 올바른 타입은 equals가 정의된 클래스인 것이 보통이지만, 가끔은 그 클래스가 구현한 특정 인터페이스가 될 수도 있다. 어떤 인터페이스는 자신을 구현한 (서로 다른) 클래스끼리도 비교할 수 있도록 equals 규약을 수정하기도 한다. 이런 인터페이스를 구현한 클래스라면 equals에서 (클래스가 아닌) 해당 인터페이스를 사용해야 한다. Set, List, Map, Map.Entry등의 컬렉렉션 인터페이스들이 여기 해당한다.
+        1. 아래의 코드는 HashMap을 사용하여 Map.Entry 객체를 생성하고 비교하는 예시입니다. HashMap에서는 equals 메소드가 Map.Entry를 이용하여 구현되어 있습니다.
+        
+        ```java
+        import java.util.*;
+        
+        public class MapExample {
+            public static void main(String[] args) {
+                Map<String, Integer> map = new HashMap<>();
+                map.put("Alice", 25);
+                map.put("Bob", 30);
+        
+                Map.Entry<String, Integer> entry = new AbstractMap.SimpleEntry<>("Alice", 25);
+        
+                // entry가 Map.Entry 인터페이스를 구현했으므로 instanceof 연산자를 사용할 수 있습니다.
+                if (entry instanceof Map.Entry) {
+                    System.out.println("entry is an instance of Map.Entry");
+                }
+        
+                // map에 포함된 키-값 쌍과 entry가 같은지 비교합니다.
+                if (map.entrySet().contains(entry)) {
+                    System.out.println("map contains the entry");
+                }
+            }
+        }
+        
+        ```
+        
+        위 코드에서 entry는 HashMap에 저장된 키-값 쌍 중 하나인 "Alice"와 25를 가지고 있습니다. 이 때, entry 객체가 Map.Entry 인터페이스를 구현하고 있는지 instanceof 연산자를 사용하여 확인합니다. 이후, map.entrySet().contains(entry)를 사용하여 HashMap에 entry가 포함되어 있는지 비교합니다. 이때, HashMap은 Map.Entry 객체의 equals 메소드를 이용하여 비교합니다. 따라서, Map.Entry 인터페이스를 구현한 클래스는 equals 메소드에서 해당 인터페이스를 사용해야 합니다.
+        
+    3. 입력을 올바른 타입으로 형변환한다. 앞서 2번에서 instnaceof 검사를 했기 때문에 이 단계는 100% 성공한다.
+    4. 입력 객체와 자기 자신의 대응되는 ‘핵심’필드들이 모두 일치하는지 하나씩 검사한다. 모든 필드가 일치하면 true를, 하나라도 다르면 false를 반환한다. 2단계에서 인터페이슬르 사용했다면 입력의 필드 값을 가져올 때도 그 인터페이스의 메서들르 사용해야 한다. 타입이 클래스라면 (접근 권한에 따라) 해당 필드에 직접 접근할 수도 있다.
+- float와 double을 제외한 기본 타입 필드는 == 연산자로 비교하고, 참조 타입 필드는 각각의 equals 메서드로, falot와 dobule 필드는 각각 정적 메서드인 Float.compare(flaot, flaot)와 Double.compare(double, double)로 비교한다.
+- float와 double을 특별 취급하는 이유는 Float.Nan, -0.0f, 특수한 부동소수 값등을 다뤄야 하기 때문이다. 자세한 설명은 [JLS 15.21.1]이나 Float.equals의 API 문서를 참고하자.
+    
+    [https://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html](https://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html)
+    
+    > **15.21.1. Numerical Equality Operators `==` and `!=`**
+    > 
+    > 
+    > If the operands of an equality operator are both of numeric type, or one is of numeric type and the other is convertible ([§5.1.8](https://docs.oracle.com/javase/specs/jls/se7/html/jls-5.html#jls-5.1.8)) to numeric type, binary numeric promotion is performed on the operands ([§5.6.2](https://docs.oracle.com/javase/specs/jls/se7/html/jls-5.html#jls-5.6.2)).
+    > 
+    > *Note that binary numeric promotion performs value set conversion ([§5.1.13](https://docs.oracle.com/javase/specs/jls/se7/html/jls-5.html#jls-5.1.13)) and may perform unboxing conversion ([§5.1.8](https://docs.oracle.com/javase/specs/jls/se7/html/jls-5.html#jls-5.1.8)).*
+    > 
+    > If the promoted type of the operands is `int` or `long`, then an integer equality test is performed.
+    > 
+    > If the promoted type is `float` or `double`, then a floating-point equality test is performed.
+    > 
+    > Comparison is carried out accurately on floating-point values, no matter what value sets their representing values were drawn from.
+    > 
+    > Floating-point equality testing is performed in accordance with the rules of the IEEE 754 standard:
+    > 
+    > - If either operand is NaN, then the result of `==` is `false` but the result of `!=` is `true`.
+    >     
+    >     Indeed, the test `x!=x` is `true` if and only if the value of `x` is NaN.
+    >     
+    >     *The methods `Float.isNaN` and `Double.isNaN` may also be used to test whether a value is NaN.*
+    >     
+    > - Positive zero and negative zero are considered equal.
+    >     
+    >     *For example, `-0.0==0.0` is `true`.*
+    >     
+    > - Otherwise, two distinct floating-point values are considered unequal by the equality operators.
+    >     
+    >     In particular, there is one value representing positive infinity and one value representing negative infinity; each compares equal only to itself, and each compares unequal to all other values.
+    >     
+    > 
+    > Subject to these considerations for floating-point numbers, the following rules then hold for integer operands or for floating-point operands other than NaN:
+    > 
+    > - The value produced by the `==` operator is `true` if the value of the left-hand operand is equal to the value of the right-hand operand; otherwise, the result is `false`.
+    > - The value produced by the `!=` operator is `true` if the value of the left-hand operand is not equal to the value of the right-hand operand; otherwise, the result is `false`.
+- Float.equals와 Double.equals 메서드를 대신 사용할 수도 있지만, 이 메서드들은 오토박싱을 수반할 수 있으니 성능상 좋지 않다. 배열 필드는 원소 각각을 앞서의 지침대로 비교한다. 배열의 모든 원소가 핵심 필드라면 Arrays.equals 메서드들 중 하나를 사용하자.
+- 떄론 null도 정상값으로 취급하는 참조 타입 필드도 있다. 이런 필드는 정적메서드인 Objects.equals(Object,Object)로 비교해 `NullPointerExcpetion` 발생을 예방하자.
+- 앞서의 CaseInsensitiveString 예처럼 비교하기가 아주 복잡한 필드를 가진 클래스도 있다. 이럴 때는 그 필드의 표준형(canonical form)을 저장해둔 후 표준형끼리 비교하면 훨씬 경제적이다. 이 기법은 특히 불변 클래스(아이템 17)에 제격이다. 가변 객체라면 값이 바뀔때마다 표준형을 최신 상태로 갱신해줘야 한다.
+- 어떤 필드를 먼저 비교하느냐가 equals의 성능을 좌우하기도 한다. 최상의 성능을 바란다면 다를 가능성이 더 크거나 비교하는 비용이 싼 (혹은 둘 다 해당하는) 필드를 먼저 비교하자. 동기화용 락(lock) 필드 같이 객체의 논리적 상태와 관련 없는 필드는 비교하면 안 된다. 핵심 필드로부터 계산해낼 수 있는 파생 필드 역시 굳이 비교할 필욘느 없지만 파생 필드를 비교하는 쪽이 더 빠를 때도 있다. 파생 필드가 객체 전체의 상태를 대표하는 상황이 그렇다.
+    - 예컨대 자신의 영역을 캐시해두는 Polygon(다각형) 클래스가 있다고 해보자. 그렇다면 모든 변과 정점을 일일이 비교할 필요 없이 캐시해둔 영역만 비교하면 결과를 곧바로 알 수 있다.
+- **equals를 다 구현했다면 세 가지만 자문해보자. 대칭적인가? 두이성이 있는가? 일관적인가?** 자문에서 끝내지 말고 단위 테스트를 작성해 돌려보자. 단, equals 메서드를 AutoValue를 이용해 작성했다면 테스트를 생략해도 안심할 수 있다. 세요건 중 하나라도 실패한다면 원인을 찾아서 고치자. 물론 나머지 요건인 반사성과 null-아님도 만족해야 하지만, 이 둘이 문제되는 경우는 별로 없다.
+- 다음은 이상의 비법에 따라 작성해본 PhonNumber 클래스용 equals 메서드다
+    
+    ```java
+    package common_methods_of_all_objects.item10_equals;
+    
+    public class PhoneNumber {
+        private final short areaCode, prefix, lineNum;
+    
+        public PhoneNumber(int areaCode, int prefix, int lineNum) {
+            this.areaCode = rangeCheck(areaCode, 999, "지역코드");
+            this.prefix = rangeCheck(prefix, 999, "프리픽스");
+            this.lineNum = rangeCheck(lineNum, 9999, "가입자 번호");
+        }
+    
+        private static short rangeCheck(int val, int max, String arg) {
+            if (val<0 || val > max)
+                throw new IllegalArgumentException(arg + ": " + val);
+            return (short) val;
+        }
+    
+        @Override
+        public boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (!(o instanceof PhoneNumber))
+                return false;
+    
+            PhoneNumber pn = (PhoneNumber) o;
+            return pn.lineNum == lineNum && pn.prefix == prefix && pn.areaCode == areaCode;
+        }
+    
+    }
+    ```
+    
+- **equals를 재정의할 땐 hasCode도 반드시 재정의하자.**
+- **너무 복잡하게 해결하려 들지 말자.**
+- Object외의 타입을 매개변수로 받는 equals 메서드는 선언하지 말자.
+    
+    > **핵심 정리**
+    꼭 필요한 경우가 아니면 equals를 재정의하지 말자. 많은 경우에 Object의 equals가 여러분이 원하는 비교를 정확히 수행해준다. 재정의해야 할 때는 그 클래스의 핵심 필드 모두를 빠짐 없이, 다섯 가지 규약을 확실히 지켜가며 비교해야 한다.
+    >
