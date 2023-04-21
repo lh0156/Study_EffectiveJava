@@ -1261,3 +1261,119 @@ static String firstLineOfFileWithCatch(String path, String defaultVal) {
     > **핵심 정리**
     꼭 필요한 경우가 아니면 equals를 재정의하지 말자. 많은 경우에 Object의 equals가 여러분이 원하는 비교를 정확히 수행해준다. 재정의해야 할 때는 그 클래스의 핵심 필드 모두를 빠짐 없이, 다섯 가지 규약을 확실히 지켜가며 비교해야 한다.
     >
+
+
+# 아이템 11: equals를 재정의 하려거든 hashCode도 재정의하라.
+
+## hashCode 23/03/16
+
+📎 **equals를 재정의한 클래스 모두에서 hashCode도 재정의해야 한다.**
+
+- 그렇지 않으면 `hashCode` 일반 규약을 어기게 되어 해당 클래스의 인스턴스를 `HashMap`이나 `HashSet`같은 컬렉션의 원소로 사용할 떄 문제를 일으킬 것이다.
+
+> Object 명세에서 발체한 규약
+
+`equals` 비교에 사용되는 정보가 변경되지 않았다면, 애플리케이션이 실행되는 동안 그 객체의 `hashCode` 메서드는 몇 번을 호출해도 일관되게 항상 같은 값을 반환해야 한다. 단, 애플리케이션을 다시 실행한다면 이 값이 달라져도 상관없다.
+
+`equals(Object)`가 두 객체를 같다고 판단했다면, 두 객체의 `hashCode`는 똑같은 값을 반환해야 한다.
+
+`equals(Object)`가 두 객체를 다르다고 판단했더라도, 두 객체의 hashCode가 서로 다른 값을 반환할 필요는 없다, 단 다른 객체에 대해서는 다른 값을 반환해야 해시테이블의 성능이 좋아진다.
+> 
+- hashCode 재정의를 잘못했을 때 크게 문제가 되는 조항은 두 번째다. 즉, 논리적으로 같은 객체는 같은 해시코드를 반환해야 한다.
+- 아이템 10에서 보았듯이 equals는 물리적으로 다른 두 객체를 논리적으로는 같다고 할 수 있다. 하지만 Object의 기본 hashCode 메서드는 이 둘이 전혀 다르다고 판단하여, 규약과 달리 (무작위처럼 보이는) 서로 다른 값을 반환한다.
+- 예를 들어 아이템 10의 PhoneNumber 클래스의 인스턴스를 HashMap의 원소로 사용한다고 해보자.
+
+```java
+package common_methods_of_all_objects.item11_hashcode;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class PhoneNumberHashMap {
+
+    public static void main(String[] args) {
+
+        Map<PhoneNumber, String> m = new HashMap<>();
+        m.put(new PhoneNumber(43, 123, 534), "윤섭");
+
+    }
+
+    static class PhoneNumber {
+        private final short areaCode, prefix, lineNum;
+
+        public PhoneNumber(int areaCode, int prefix, int lineNum) {
+            this.areaCode = rangeCheck(areaCode, 999, "지역코드");
+            this.prefix = rangeCheck(prefix, 999, "프리픽스");
+            this.lineNum = rangeCheck(lineNum, 9999, "가입자 번호");
+        }
+
+        private static short rangeCheck(int val, int max, String arg) {
+            if (val < 0 || val > max)
+                throw new IllegalArgumentException(arg + ": " + val);
+            return (short) val;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (!(o instanceof PhoneNumber))
+                return false;
+
+            PhoneNumber pn = (PhoneNumber) o;
+            return pn.lineNum == lineNum && pn.prefix == prefix && pn.areaCode == areaCode;
+        }
+
+    }
+}
+```
+
+- 이 코드 다음에 `m.get(*new* PhoneNumber(43, 123, 534));`를 실행하면 "윤섭"이 나와야 할 것 같지만, 실제로는 null을 반환한다. 여기에는 2개의 phoneNumber 인스턴스가 사용되었다. 하나는 HashMap에 “제니”를 넣을 때 사용했고, (논리적 동치인) 두 번쨰는 이를 꺼내려할 때 사용됐다.
+- `PhoneNumber` 클래스는 `hashCode`를 재정의하지 않았기 때문에 논리적 동치인 두 객체가 서로 다른 해시코드를 반환하여 두 번째 규약을 지키지 못한다. 그 결과 `get` 메서드는 엉뚱한 해시 버켓에 가서 객체를 찾으려 한 것이다.
+- 설사 두 인스턴스를 같은 버킷에 담았더라도 `get` 메서드는 여전히 `null`을 반환하는데, `HashMap`은 해시코드가 다른 엔트리끼리는 동치성 비교를 시도조차 하지 않도록 최적화되어 있기 때문이다.
+- 이 문제는 `PhoneNumber`에 적절한 `hashCode` 메서드만 작성해주면 해결된다. 올바른 `hashCode` 메서드는 어떤 모습이어야 할까? 안 좋게 작성하려면 아주 간단하다. 예를 들어 다음 코드는 적법하게 구현헀지만, 절대 사용해서는 안된다.
+
+```java
+@Override
+public int HashCode() {
+    return 42;
+}
+```
+
+- 이 코드는 동치인 모든 객체에서 똑같은 해시코드를 반환하니 적법하다. 하지만 끔찍하게도 모든 객체에서 똑같은 값만 내어주므로 모든 객체가 해시테이블의 버킷 하나에 담겨 마치 연결 리스트(`linked list`)처럼 동작한다. 그 결과 평균 수행시간이 O(1)인 해시테이블이 O(n)으로 느려져서, 객체가 많아지면 도저히 쓸 수 없게된다.
+- 좋은 해시 함수라면 서로 다른 인슽넌스에 서로 다른 해시코드를 반환한다. 이것이 바로 `hashCode`의 세 번째 규약이 요구하는 속성이다.
+- 이상적인 해시 함수는 주어진 (서로 다른) 인스턴스들을 32비트 정수 범위에 균일하게 분배해야 한다. 이상을 완벽히 실현하기는 어렵지만 비슷하게 만들기는 그다지 어렵지 않다.
+- 다음은 좋은 hashCode를 작성하는 간단한 요령이다.
+    1. int 변수 result를 선언한 후 값 c로 초기화한다. 이때 c는 해당 객체의 첫번째 핵심 필드를 단계 2.a 방식으로 계산한 해시코드다(여기서 핵심 필드란 equals 비교에 사용되는 필드를 말한다. 아이템 10 참조)
+    2. 해당 객체의 나머지 핵심 필드 f 각각에 대해 다음 작업을 수행한다.
+        1. 해당 필드의 해시코드 c를 계산한다.
+            1. 기본 타입 필드라면, `Type.hashCode`(f)를 수행한다. 여기서 `Type`은 해당 기본 타입의 박싱 클래스다.
+            2. 참조 타입 필드면서 이 클래스의 equals 메서드가 이 필드의 equals를 재귀적으로 호출해 비교한다면, 이 필드의 `hashCode`를 재귀적으로 호출한다. 계산이 더 복잡해질 것 같으면, 이 필드의 표준형(ca-nonical representation)을 만들어 그 표준형의 `hashCode`를 호출한다. 필드의 값이 null이면 0을 사용한다(다른 상수도 괜찮지만 전통적으로 0을 사용한다)
+            3. 필드가 배열이라면, 핵심 원소 각각을 별도 필드처럼 다룬다, 이상의 규칙을 재귀적으로 적용해 각 핵심 원소의 해시코드를 계산한 다음, 단계 2.b 방식으로 갱신한다. 배열에 핵심 원소가 하나도 없다면 단순히 상수(0을 추천한다)를 사용한다. 모든 원소가 핵심 원소라면 `Arrays.hashCode`를 사용한다.
+        2. 단계 2.a에서 계산한 해시코드 c로 result를 갱신한다. 코드로는 다음과 같다.
+        `result = 31 * result + c;`
+        3. result를 반환한다.
+        
+- `hashCode`를 다 구현했다면 이 메서드가 동치인 인스턴스에 대해 똑같은 해시코드를 반환할지 자문해보자. 그리고 여러분의 직관을 검증할 단위테스트를 작성하자 (`equals`와 `hashCode`를 `AutoValue`로 생성했다면 건너뛰어도 좋다)
+    - hashCode Override 전
+        
+        ```java
+        System.out.println(new PhoneNumber(43, 123, 534));
+        // common_methods_of_all_objects.item11_hashcode.PhoneNumberHashMap$PhoneNumber@1b6d3586
+        System.out.println(new PhoneNumber(43, 123, 534));
+        // common_methods_of_all_objects.item11_hashcode.PhoneNumberHashMap$PhoneNumber@4554617c
+        ```
+        
+    - hashCode Override 후
+        
+        ```java
+        System.out.println(new PhoneNumber(43, 123, 534));
+        // common_methods_of_all_objects.item11_hashcode.PhoneNumberHashMap$PhoneNumber@e290
+        System.out.println(new PhoneNumber(43, 123, 534));
+        // common_methods_of_all_objects.item11_hashcode.PhoneNumberHashMap$PhoneNumber@e290
+        ```
+        
+- 동치인 인스턴스가 서로 다른 해시코드를 반환한다면 원인을 찾아 해결하자.
+- 파생 필드는 해시코드 계산에서 제외해도 된다. 즉, 다른 필드로부터 계산해낼 수 있는 필드는 모두 무시해도 된다. 또한 `equals` 비교에 사용되지 않은 필드는 반드시 제외해야 한다. 그렇지 않으면 `hashCode` 규약 두 번쨰를 어기게 될 위험이 있다.
+
+- 단계 2.b의 곱셈 `31*result`는 필드를 곱하는 순서에 따라  result 값이 달라지게 한다. 그 결과 클래스에 비슷한 필드가 여러 개일 때 해시 효과를 크게 높여준다.
